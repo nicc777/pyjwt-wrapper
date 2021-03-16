@@ -7,7 +7,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import unittest
 from pyjwt_wrapper.authentication import authentication_service_default_response, authenticate_using_user_credentials
-from pyjwt_wrapper import Logger
+from pyjwt_wrapper import Logger, BackEndAuthenticator, AuthenticationResult
 from logging import Handler
 
 
@@ -24,6 +24,26 @@ class ListHandler(Handler):
 
     def emit(self, record):
         self.records.append(record)
+
+
+class AlwaysFailBackEndAuthenticator(BackEndAuthenticator):
+    """
+        This is an authentication backend that will always fail any loggin attempt
+    """
+
+    def __init__(self, logger: Logger=Logger()):
+        super().__init__(logger=logger)
+
+    def authenticate(self, input: dict, request_id: str=None)->AuthenticationResult:
+        """
+            This method will always fail an authentication request
+        """
+        self.logger.error(message='Authentication Attempt Failed for user "{}"... ALWAYS'.format(input['username']), request_id=request_id)
+        return AuthenticationResult(
+            success=False,
+            userid=None,
+            permissions=list()
+        )
 
 
 class TestAuthenticationServiceDefaultResponse(unittest.TestCase):
@@ -47,10 +67,10 @@ class TestAuthenticationUsingUserCredentials(unittest.TestCase):
         self.logger = Logger(logging_handler=ListHandler(records=self.log_records))
 
     def test_basic_01(self):
-        username = 'user123'
+        username = 'user001'
         request_id = 'test_001'
         result = authenticate_using_user_credentials(
-            application_name='test',
+            application_name='test1',
             username=username,
             password='password',
             logger=self.logger,
@@ -71,6 +91,33 @@ class TestAuthenticationUsingUserCredentials(unittest.TestCase):
         self.assertTrue('authenticated successfully' in self.log_records[1].getMessage())
         self.assertTrue(request_id in self.log_records[0].getMessage())
         self.assertTrue(request_id in self.log_records[1].getMessage())
+
+    def test_authentication_failed_01(self):
+        username = 'user002'
+        request_id = 'test_002'
+        result = authenticate_using_user_credentials(
+            application_name='test2',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            backend=AlwaysFailBackEndAuthenticator(logger=self.logger)
+        )
+        self.assertIsInstance(result, dict)
+        self.assertTrue('user_token' in result)
+        self.assertTrue('access_token' in result)
+        self.assertTrue('request_id' in result)
+        self.assertIsNone(result['user_token'])
+        self.assertIsNone(result['access_token'])
+        self.assertIsNotNone(result['request_id'])
+        self.assertIsInstance(result['request_id'], str)
+        self.assertEqual(result['request_id'], request_id)
+        fail_log_message = False
+        for log_message in self.log_records:
+            log_message_str = log_message.getMessage()
+            if 'ALWAYS' in log_message_str and username in log_message_str:
+                fail_log_message = True
+        self.assertTrue(fail_log_message, 'Could not find failure log message')
 
     
 
