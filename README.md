@@ -31,7 +31,7 @@ python -m venv venv
 pip install pyjwt coverage
 
 # Run the unit tests
-coverage run -m unittest discover
+coverage run --source ./src -m unittest discover
 
 # Get teh coverage reports
 coverage report -m
