@@ -7,7 +7,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import unittest
 from pyjwt_wrapper.authentication import authentication_service_default_response, authenticate_using_user_credentials
-from pyjwt_wrapper import Logger, BackEndAuthenticator, AuthenticationResult
+from pyjwt_wrapper import Logger, BackEndAuthenticator, AuthenticationResult, decode_jwt
 from logging import Handler
 
 
@@ -44,6 +44,35 @@ class AlwaysFailBackEndAuthenticator(BackEndAuthenticator):
             userid=None,
             permissions=list()
         )
+
+
+class AlwaysSucceedBackEndAuthenticatorWithExtras(BackEndAuthenticator):
+    """
+        This is an authentication backend that will always succeed any loggin attempt
+    """
+
+    def __init__(self, logger: Logger=Logger()):
+        super().__init__(logger=logger)
+
+    def authenticate(self, input: dict, request_id: str=None)->AuthenticationResult:
+        """
+            This method will always succeed an authentication request and add some extra data for both the access and user tokens
+        """
+        self.logger.error(message='Authentication Attempt Success for user "{}"... ALWAYS'.format(input['username']), request_id=request_id)
+        result = AuthenticationResult(
+            success=True,
+            userid=input['username'],
+            permissions=['p1', 'p2']
+        )
+        result.access_token_extra = {
+            'attr1': 'value1',
+            'attr2': True
+        }
+        result.user_token_extra = {
+            'attr3': None,
+            'attr4': 1234
+        }
+        return result
 
 
 class TestAuthenticationServiceDefaultResponse(unittest.TestCase):
@@ -119,7 +148,47 @@ class TestAuthenticationUsingUserCredentials(unittest.TestCase):
                 fail_log_message = True
         self.assertTrue(fail_log_message, 'Could not find failure log message')
 
-    
+    def test_authentication_success_with_extra_data_01(self):
+        username = 'user003'
+        request_id = 'test_003'
+        result = authenticate_using_user_credentials(
+            application_name='test3',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            backend=AlwaysSucceedBackEndAuthenticatorWithExtras(logger=self.logger)
+        )
+        self.assertIsInstance(result, dict)
+        self.assertTrue('user_token' in result)
+        self.assertTrue('access_token' in result)
+        self.assertTrue('request_id' in result)
+        self.assertIsNotNone(result['user_token'])
+        self.assertIsNotNone(result['access_token'])
+        self.assertIsNotNone(result['request_id'])
+        self.assertIsInstance(result['user_token'], str)
+        self.assertIsInstance(result['access_token'], str)
+        self.assertIsInstance(result['request_id'], str)
+        
+        access_token_data = decode_jwt(result['access_token'], audience='test3')
+        self.assertTrue('extra' in access_token_data)
+        self.assertTrue('attr1' in access_token_data['extra'])
+        self.assertTrue('attr2' in access_token_data['extra'])
+        self.assertIsNotNone(access_token_data['extra']['attr1'])
+        self.assertIsNotNone(access_token_data['extra']['attr2'])
+        self.assertEqual(access_token_data['extra']['attr1'], 'value1')
+        self.assertTrue(access_token_data['extra']['attr2'])
+
+        user_token_data = decode_jwt(result['user_token'])
+        self.assertTrue('extra' in user_token_data)
+        self.assertTrue('attr3' in user_token_data['extra'])
+        self.assertTrue('attr4' in user_token_data['extra'])
+        self.assertIsNone(user_token_data['extra']['attr3'])
+        self.assertIsNotNone(user_token_data['extra']['attr4'])
+        self.assertEqual(user_token_data['extra']['attr4'], 1234)
+        
+
+
 
 if __name__ == '__main__':
     unittest.main()

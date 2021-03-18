@@ -178,7 +178,9 @@ def generate_jwt(data: dict):
     return jwt.encode(data, JWT_SECRET, algorithm="HS256")
 
 
-def decode_jwt(jwt_data: str)->dict:
+def decode_jwt(jwt_data: str, audience: str=None)->dict:
+    if audience:
+        return jwt.decode(jwt_data, JWT_SECRET, audience=audience, algorithms="HS256")
     return jwt.decode(jwt_data, JWT_SECRET, algorithms="HS256")
 
 # EOF
