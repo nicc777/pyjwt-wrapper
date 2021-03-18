@@ -49,6 +49,13 @@ class TestAuthorization(unittest.TestCase):
             required_permission='admin'
         )
         self.assertTrue(authorized)
+        log_entry_validated = False
+        for log_record in self.log_records:
+            log_message = log_record.getMessage()
+            if 'AUTHORIZED [01]' in log_message:
+                log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
+        self.assertTrue(log_entry_validated)
 
     def test_permission_not_in_list_01(self):
         username = 'user001'
@@ -70,6 +77,8 @@ class TestAuthorization(unittest.TestCase):
         self.assertFalse(authorized)
         log_entry_validated = False
         for log_record in self.log_records:
-            if 'Required permission "user" not in list of user permissions.' in log_record.getMessage():
+            log_message = log_record.getMessage()
+            if 'Required permission "user" not in list of user permissions.' in log_message:
                 log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
         self.assertTrue(log_entry_validated)
