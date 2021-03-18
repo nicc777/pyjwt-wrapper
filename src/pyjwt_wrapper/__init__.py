@@ -169,18 +169,18 @@ class BackEndAuthenticator:
 
 
 
-def password_hash(password: str)->str:
-    final_str = '{}{}'.format(password, PASSWORD_SALT)
+def password_hash(password: str, salt: str=PASSWORD_SALT)->str:
+    final_str = '{}{}'.format(password, salt)
     return hashlib.sha256(final_str.encode('utf-8')).hexdigest()
 
 
-def generate_jwt(data: dict):
-    return jwt.encode(data, JWT_SECRET, algorithm="HS256")
+def generate_jwt(data: dict, secret_str: str=JWT_SECRET):
+    return jwt.encode(data, secret_str, algorithm="HS256")
 
 
-def decode_jwt(jwt_data: str, audience: str=None)->dict:
+def decode_jwt(jwt_data: str, audience: str=None, secret_str: str=JWT_SECRET)->dict:
     if audience:
-        return jwt.decode(jwt_data, JWT_SECRET, audience=audience, algorithms="HS256")
-    return jwt.decode(jwt_data, JWT_SECRET, algorithms="HS256")
+        return jwt.decode(jwt_data, secret_str, audience=audience, algorithms="HS256")
+    return jwt.decode(jwt_data, secret_str, algorithms="HS256")
 
 # EOF
