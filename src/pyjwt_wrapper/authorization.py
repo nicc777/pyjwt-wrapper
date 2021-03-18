@@ -23,8 +23,8 @@ def authorize_token(
                     authorized = True
                 else:
                     logger.error('Required permission "{}" not in list of user permissions.'.format(required_permission), request_id=request_id)
-            else:
-                logger.error(message='prm attribute not present', request_id=request_id)
+            else:   # This should never happen. Logging the event anyway as this may be an indication of some malicious intent
+                logger.error(message='prm attribute not present', request_id=request_id)    # pragma: no cover
         else:
             logger.info('AUTHORIZED [03]', request_id=request_id)
             authorized = True

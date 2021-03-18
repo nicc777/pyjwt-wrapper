@@ -84,3 +84,62 @@ class TestAuthorization(unittest.TestCase):
                 log_entry_validated = True
             self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
         self.assertTrue(log_entry_validated)
+
+    def test_permissions_not_required_01(self):
+        username = 'user001'
+        request_id = 'test_003'
+        result = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id
+        )
+        authorized = authorize_token(
+            token=result['access_token'], 
+            application_name='test1', 
+            logger=self.logger, 
+            request_id=request_id
+        )
+        self.assertTrue(authorized)
+        log_entry_validated = False
+        for log_record in self.log_records:
+            log_message = log_record.getMessage()
+            if 'AUTHORIZED [03]' in log_message:
+                log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
+        self.assertTrue(log_entry_validated)
+
+    def test_malformed_token_raises_exception(self):
+        request_id = 'test_004'
+        authorized = authorize_token(
+            token='aaa.bbb.ccc', 
+            application_name='test1', 
+            logger=self.logger, 
+            request_id=request_id
+        )
+        self.assertFalse(authorized)
+        log_entry_validated = False
+        for log_record in self.log_records:
+            log_message = log_record.getMessage()
+            if 'EXCEPTION' in log_message:
+                log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
+        self.assertTrue(log_entry_validated)
+
+    def test_fail_fraudelant_token(self):
+        request_id = 'test_005'
+        authorized = authorize_token(
+            token='eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJ0ZXN0Iiwic3ViIjoidXNlcjEiLCJhdWQiOiJ0ZXN0IiwiZXhwIjoxNjE2MTM2NjIwLCJuYmYiOjE2MTYwNTAyMjAsImlhdCI6MTYxNjA1MDIyMCwianRpIjpudWxsLCJwcm0iOlsiYWRtaW4iXX0.FHjyjnDBSG_F8sVycPRP8iJpsD83ZZNw_UOiPobXI0U', 
+            application_name='test1', 
+            logger=self.logger, 
+            request_id=request_id
+        )
+        self.assertFalse(authorized)
+        log_entry_validated = False
+        for log_record in self.log_records:
+            log_message = log_record.getMessage()
+            if 'EXCEPTION' in log_message:
+                log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
+        self.assertTrue(log_entry_validated)
