@@ -1,4 +1,4 @@
-from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp
+from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET
 
 
 default_logger = Logger()
@@ -20,7 +20,8 @@ def authenticate_using_user_credentials(
     backend: BackEndAuthenticator=BackEndAuthenticator(logger=default_logger),
     request_id: str=None,
     token_expires_in_seconds: int=86400,
-    convert_username_to_lowercase: bool=True
+    convert_username_to_lowercase: bool=True,
+    secret_str: str=JWT_SECRET
 )->dict:
     if convert_username_to_lowercase:
         username = username.lower()
@@ -54,8 +55,8 @@ def authenticate_using_user_credentials(
             access_token_data['extra'] = authentication_backend_call_result.access_token_extra
         if len(authentication_backend_call_result.user_token_extra) > 0:
             user_token_data['extra'] = authentication_backend_call_result.user_token_extra
-        result['access_token'] = generate_jwt(data=access_token_data)
-        result['user_token'] = generate_jwt(data=user_token_data)
+        result['access_token'] = generate_jwt(data=access_token_data, secret_str=secret_str)
+        result['user_token'] = generate_jwt(data=user_token_data, secret_str=secret_str)
         logger.info(message='user "{}" authenticated successfully'.format(username), request_id=request_id)
         logger.debug(message='access_token: {}'.format(result['access_token']), request_id=request_id)
         logger.debug(message='user_token: {}'.format(result['user_token']), request_id=request_id)

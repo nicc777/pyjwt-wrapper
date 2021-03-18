@@ -1,5 +1,5 @@
 import traceback
-from pyjwt_wrapper import Logger, decode_jwt
+from pyjwt_wrapper import Logger, decode_jwt, JWT_SECRET
 
 
 default_logger = Logger()
@@ -10,11 +10,12 @@ def authorize_token(
     application_name: str=None, 
     logger: Logger=default_logger, 
     request_id: str=None,
-    required_permission: str=None
+    required_permission: str=None,
+    secret_str: str=JWT_SECRET
 )->bool:
     authorized = False
     try:
-        decoded_token = decode_jwt(jwt_data=token, audience=application_name)
+        decoded_token = decode_jwt(jwt_data=token, audience=application_name, secret_str=secret_str)
         logger.info(message='Token validation passed', request_id=request_id)
         if required_permission:
             if 'prm' in decoded_token:

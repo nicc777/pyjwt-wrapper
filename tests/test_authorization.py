@@ -143,3 +143,46 @@ class TestAuthorization(unittest.TestCase):
                 log_entry_validated = True
             self.assertTrue(request_id in log_message, 'request_id not present in message: {}'.format(log_message))
         self.assertTrue(log_entry_validated)
+
+    def test_success_based_on_passed_in_secret_01(self):
+        secret = 'abcdefghijklmnopqrstuvwxyz'
+        username = 'user001'
+        request_id = 'test_003'
+        result = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            secret_str= secret
+        )
+        authorized = authorize_token(
+            token=result['access_token'], 
+            application_name='test1', 
+            logger=self.logger, 
+            request_id=request_id,
+            secret_str= secret
+        )
+        self.assertTrue(authorized)
+
+    def test_fail_based_on_passed_in_secret_that_differ_01(self):
+        secret1 = 'abcdefghijklmnopqrstuvwxyz'
+        secret2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
+        username = 'user001'
+        request_id = 'test_003'
+        result = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            secret_str= secret1
+        )
+        authorized = authorize_token(
+            token=result['access_token'], 
+            application_name='test1', 
+            logger=self.logger, 
+            request_id=request_id,
+            secret_str= secret2
+        )
+        self.assertFalse(authorized)
