@@ -8,8 +8,9 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 import unittest
 from pyjwt_wrapper.authorization import authorize_token
 from pyjwt_wrapper.authentication import authenticate_using_user_credentials
-from pyjwt_wrapper import Logger, AuthenticationResult, decode_jwt
+from pyjwt_wrapper import Logger, AuthenticationResult, decode_jwt, BackEndAuthenticator
 from logging import Handler
+
 
 class ListHandler(Handler):
     """
@@ -24,6 +25,7 @@ class ListHandler(Handler):
 
     def emit(self, record):
         self.records.append(record)
+
 
 class TestAuthorization(unittest.TestCase):
 

@@ -10,8 +10,7 @@ def authorize_token(
     application_name: str=None, 
     logger: Logger=default_logger, 
     request_id: str=None,
-    required_permission: str=None,
-    allow_authz_if_permission_attr_not_present_in_token: bool=False
+    required_permission: str=None
 )->bool:
     authorized = False
     try:
@@ -25,10 +24,7 @@ def authorize_token(
                 else:
                     logger.error('Required permission "{}" not in list of user permissions.'.format(required_permission), request_id=request_id)
             else:
-                logger.info('prm attribute not present in token')
-                if allow_authz_if_permission_attr_not_present_in_token:
-                    logger.info('AUTHORIZED [02]', request_id=request_id)
-                    authorized = True
+                logger.error(message='prm attribute not present', request_id=request_id)
         else:
             logger.info('AUTHORIZED [03]', request_id=request_id)
             authorized = True
