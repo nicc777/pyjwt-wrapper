@@ -147,7 +147,7 @@ class TestAuthorization(unittest.TestCase):
     def test_success_based_on_passed_in_secret_01(self):
         secret = 'abcdefghijklmnopqrstuvwxyz'
         username = 'user001'
-        request_id = 'test_003'
+        request_id = 'test_006'
         result = authenticate_using_user_credentials(
             application_name='test1',
             username=username,
@@ -169,7 +169,7 @@ class TestAuthorization(unittest.TestCase):
         secret1 = 'abcdefghijklmnopqrstuvwxyz'
         secret2 = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'
         username = 'user001'
-        request_id = 'test_003'
+        request_id = 'test_007'
         result = authenticate_using_user_credentials(
             application_name='test1',
             username=username,
