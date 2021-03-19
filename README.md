@@ -1,5 +1,16 @@
 An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/index.html) for authentication and authorization.
 
+- [Why this may be useful](#why-this-may-be-useful)
+- [Implementation](#implementation)
+  - [Authentication](#authentication)
+  - [The JSON Web Token (generated from `pyjwt_wrapper.authentication`)](#the-json-web-token-generated-from-pyjwt_wrapperauthentication)
+    - [Access Token](#access-token)
+    - [User Token](#user-token)
+  - [Authorization (as implemented by from `pyjwt_wrapper.authorization`)](#authorization-as-implemented-by-from-pyjwt_wrapperauthorization)
+  - [Logging](#logging)
+- [Testing from Source](#testing-from-source)
+- [To Do](#to-do)
+
 **_Note_**: The development is still in an early stage, and therefore documentation should improve over time. Right now, only some basic concepts are covered.
 
 # Why this may be useful
