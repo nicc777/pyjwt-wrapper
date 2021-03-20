@@ -117,9 +117,15 @@ class TestAuthenticationUsingUserCredentials(unittest.TestCase):
         self.assertIsInstance(result['request_id'], str)
         self.assertTrue('USING A DEFAULT LOCAL INSTANCE - IMPLEMENT THIS CLASS YOURSELF TO CALL YOUR OWN BACKEND' in self.log_records[0].getMessage())
         self.assertTrue(username in self.log_records[1].getMessage())
-        self.assertTrue('authenticated successfully' in self.log_records[1].getMessage())
         self.assertTrue(request_id in self.log_records[0].getMessage())
         self.assertTrue(request_id in self.log_records[1].getMessage())
+        log_entry_validated = False
+        for log_record in self.log_records:
+            log_message = log_record.getMessage()
+            if 'authenticated successfully' in log_message:
+                log_entry_validated = True
+            self.assertTrue(request_id in log_message, 'expected success message not in message: {}'.format(log_message))
+        self.assertTrue(log_entry_validated)
 
     def test_authentication_failed_01(self):
         username = 'user002'
