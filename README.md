@@ -1,6 +1,11 @@
 An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/index.html) for authentication and authorization.
 
 - [Why this may be useful](#why-this-may-be-useful)
+- [Quick StartInstallation](#quick-startinstallation)
+  - [Installation](#installation)
+  - [Implement your own `BackEndAuthenticator`](#implement-your-own-backendauthenticator)
+  - [Authenticating a user that supplies a username and password](#authenticating-a-user-that-supplies-a-username-and-password)
+  - [Authorize an API request using the `access_token` from Authentication](#authorize-an-api-request-using-the-access_token-from-authentication)
 - [Implementation](#implementation)
   - [Authentication](#authentication)
   - [The JSON Web Token (generated from `pyjwt_wrapper.authentication`)](#the-json-web-token-generated-from-pyjwt_wrapperauthentication)
@@ -20,6 +25,111 @@ PyJWT is a really solid library and a very useful tool for creating and using JS
 This library is a wrapper around PyJWT that creates a standard `access token` and `user token`.
 
 **_Note_**: Refresh tokens to come soon...
+
+# Quick StartInstallation
+
+## Installation 
+
+```shell
+pip install pyjwt-wrapper
+```
+
+## Implement your own `BackEndAuthenticator`
+
+Below is a quick example of how you would implement your own password based authentication. In stead of users being in a dictionary, you would typically connect to a database.
+
+**_Note_**: The example below assumes the password is encoded using SHA256. However, when a user enters a password, we will receive it in normal text format which means it also needs to be SHA256 converted in order to compare to the password on record.
+
+You would typically implement in this code in the application/API that handles authentication.
+
+```python
+from pyjwt_wrapper import Logger, BackEndAuthenticator, AuthenticationResult, generate_jwt, PASSWORD_SALT
+import traceback
+import hashlib
+
+
+class MyBackEndAuthenticator(BackEndAuthenticator):
+    def __init__(self, logger: Logger=Logger()):
+        super().__init__(logger=logger)
+    def authenticate(self, input: dict, request_id: str=None)->AuthenticationResult:
+        my_hard_coded_users = {
+            'user1': {
+                'password': hashlib.sha256('!paSsWord123!{}'.format(PASSWORD_SALT).encode('utf-8')).hexdigest(),
+                'permissions': ['p1', 'p2'],
+                'active': True
+            }
+        }
+        result = AuthenticationResult(
+            success=False,
+            userid=None,
+            permissions=list()
+        )
+        try:
+            input_password_hashed = hashlib.sha256('{}{}'.format(input['password'], PASSWORD_SALT).encode('utf-8')).hexdigest()
+            if input['username'] in my_hard_coded_users:
+                if my_hard_coded_users[input['username']]['active']:
+                    if input_password_hashed == my_hard_coded_users[input['username']]['password']:
+                        result.success = True
+                        result.userid = input['username']
+                        result.permissions = my_hard_coded_users[input['username']]['permissions']
+                        self.logger.info(message='LOGIN SUCCESS for user "{}"'.format(input['username']), request_id=request_id)
+                    else:
+                        self.logger.error(message='LOGIN FAIL for user "{}" - incorrect password'.format(input['username']), request_id=request_id)
+                else:
+                    self.logger.error(message='LOGIN FAIL for user "{}" - user not active'.format(input['username']), request_id=request_id)
+            else:
+                self.logger.error(message='LOGIN FAIL for user "{}" - user not found'.format(input['username']), request_id=request_id)
+        except:
+            self.logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+        return result
+```
+
+## Authenticating a user that supplies a username and password
+
+You would also implement in this code in the application/API that handles authentication.
+
+```python
+from pyjwt_wrapper.authentication import  authenticate_using_user_credentials
+
+# This part would tyically be implemented in a function that receives the username and password
+result = authenticate_using_user_credentials(
+    application_name='my_awesome_app',
+    username='user1',
+    password='!paSsWord123!',
+    request_id='test123',
+    backend=MyBackEndAuthenticator()
+)
+
+# Return the result to the client...
+```
+
+The result may look something like this:
+
+```python
+{
+    'user_token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJteV9hd2Vzb21lX2FwcCIsInN1YiI6InVzZXIxIiwiY29udGV4dCI6Im15X2F3ZXNvbWVfYXBwIn0.qylm2cpukiUzCAjeDhO99iTMAWwdjuJKt4Jb2q0np2A', 
+    'access_token': 'eyJ0eXAiOiJKV1QiLCJhbGciOiJIUzI1NiJ9.eyJpc3MiOiJteV9hd2Vzb21lX2FwcCIsInN1YiI6InVzZXIxIiwiYXVkIjoibXlfYXdlc29tZV9hcHAiLCJleHAiOjE2MTYzMTg1MTYsIm5iZiI6MTYxNjIzMjExNiwiaWF0IjoxNjE2MjMyMTE2LCJqdGkiOiJ0ZXN0MTIzIiwicHJtIjpbInAxIiwicDIiXX0.3UXG_fasgaj88ujbltHKqNUgJA1DJX9O6C6-i0Y1cIU', 
+    'request_id': 'test123'
+}
+```
+
+You should then use the `access_token` in every API call you make.
+
+## Authorize an API request using the `access_token` from Authentication
+
+The authorization code is implemented in applications/API that receives requests from the user, which is why each request must include the `access_token`.
+
+```python
+from pyjwt_wrapper.authorization import authorize_token
+
+authorized = authorize_token(
+    token=result['access_token'], 
+    application_name='my_awesome_app',
+    request_id='api123'
+)
+```
+
+The resulting value from `authorized` should be `True`
 
 # Implementation
 
@@ -149,3 +259,5 @@ coverage report -m
 
 * Creation of Refresh Tokens
 * Managing of Refresh Tokens
+* Create a customizable authorization class
+* Create authorization caching feature

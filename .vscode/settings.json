@@ -1,6 +1,9 @@
 {
     "cSpell.words": [
-        "pyjwt"
+        "hashlib",
+        "hexdigest",
+        "pyjwt",
+        "userid"
     ],
     "python.pythonPath": "venv/bin/python",
     "python.testing.unittestArgs": [
