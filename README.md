@@ -1,7 +1,7 @@
 An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/index.html) for authentication and authorization.
 
 - [Why this may be useful](#why-this-may-be-useful)
-- [Quick StartInstallation](#quick-startinstallation)
+- [Quick Start](#quick-start)
   - [Installation](#installation)
   - [Implement your own `BackEndAuthenticator`](#implement-your-own-backendauthenticator)
   - [Authenticating a user that supplies a username and password](#authenticating-a-user-that-supplies-a-username-and-password)
@@ -26,7 +26,7 @@ This library is a wrapper around PyJWT that creates a standard `access token` an
 
 **_Note_**: Refresh tokens to come soon...
 
-# Quick StartInstallation
+# Quick Start
 
 ## Installation 
 
