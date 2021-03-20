@@ -6,6 +6,9 @@ An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/ind
   - [Implement your own `BackEndAuthenticator`](#implement-your-own-backendauthenticator)
   - [Authenticating a user that supplies a username and password](#authenticating-a-user-that-supplies-a-username-and-password)
   - [Authorize an API request using the `access_token` from Authentication](#authorize-an-api-request-using-the-access_token-from-authentication)
+  - [Important Parameters](#important-parameters)
+    - [Using the password salt](#using-the-password-salt)
+    - [Using the JWT secret](#using-the-jwt-secret)
 - [Implementation](#implementation)
   - [Authentication](#authentication)
   - [The JSON Web Token (generated from `pyjwt_wrapper.authentication`)](#the-json-web-token-generated-from-pyjwt_wrapperauthentication)
@@ -132,6 +135,58 @@ authorized = authorize_token(
 ```
 
 The resulting value from `authorized` should be `True`
+
+## Important Parameters
+
+There are two parameters that are important to take note of:
+
+* `PASSWORD_SALT` - The salt used for added protection when storing passwords.
+* `JWT_SECRET` - The secret required to encrypt and validate a JWT
+
+### Using the password salt
+
+Depending on your `BackEndAuthenticator` implementation, the `PASSWORD_SALT` may be considered optional. It's provided as a convenient way to include the parameter.
+
+When your user register, your application should add some salt to ensure the password is even better protected when storing it in a database.
+
+First, in the environment your application run, ensure the `PASSWORD_SALT` is set as an environment variable. This can be done using the following shell command on Linux like operating systems:
+
+```shell
+export PASSWORD_SALT="some really random text and special characters."
+```
+
+Typically, you will salt the password with something like:
+
+```python
+user_password = '....' # Store the user's password in a variable 
+hashed_password = hashlib.sha256('{}{}'.format(user_password, PASSWORD_SALT).encode('utf-8')).hexdigest()
+
+# You can now save the hashed_password in a database
+```
+
+If you want to generate a strong salt once-off, you can run the following shell command:
+
+```shell
+python3 -c "from pyjwt_wrapper import generate_random_string; print('{}'.format(generate_random_string(length=60)))"
+```
+
+**_Important_**: You need to safely and securely store your salt value as any password validation will be rendered useless if you don't have the original salt it was hashed with
+
+### Using the JWT secret
+
+The JWT secret is required and as with the password salt, you need to store it safely and securely. If you ever need to change the secret, any existing tokens created with the previous secret will not pass validation and all users would have to re-authenticate to get new tokens issued with the new secret.
+
+Again, you can use the following one-liner utility to generate the secret:
+
+```shell
+python3 -c "from pyjwt_wrapper import generate_random_string; print('{}'.format(generate_random_string(length=60)))"
+```
+
+Set the following environment variable in your application environment:
+
+```shell
+export JWT_SECRET="some really random text and special characters."
+```
 
 # Implementation
 
