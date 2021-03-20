@@ -315,6 +315,5 @@ coverage report -m
 # To Do
 
 * Creation of Refresh Tokens
-* Managing of Refresh Tokens
 * Create a customizable authorization class
 * Create authorization caching feature
