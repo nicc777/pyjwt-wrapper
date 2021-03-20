@@ -90,6 +90,7 @@ Example:
 
 ```python
 from pyjwt_wrapper import Logger
+import logging
 
 fh = logging.FileHandler('spam.log')
 formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
