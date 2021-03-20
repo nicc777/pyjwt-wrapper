@@ -34,6 +34,8 @@ This library is a wrapper around PyJWT that creates a standard `access token` an
 pip install pyjwt-wrapper
 ```
 
+PyPi page: https://pypi.org/project/pyjwt-wrapper/ 
+
 ## Implement your own `BackEndAuthenticator`
 
 Below is a quick example of how you would implement your own password based authentication. In stead of users being in a dictionary, you would typically connect to a database.
