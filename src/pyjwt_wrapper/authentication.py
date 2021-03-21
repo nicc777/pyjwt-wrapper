@@ -199,8 +199,8 @@ def refresh_tokens(
                             logger.info(message='User validation function result: {}'.format(user_function_passed), request_id=request_id)
                         except: # pragma: no cover
                             logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id) # pragma: no cover
-                    else:
-                        logger.warning(message='When defining a user validation function, the object must be callable', request_id=request_id)
+                    else: 
+                        logger.warning(message='When defining a user validation function, the object must be callable', request_id=request_id)  # pragma: no cover
                 else:
                     logger.info(message='No user validation function used', request_id=request_id)
                 if user_function_passed:
