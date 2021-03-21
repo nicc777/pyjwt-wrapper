@@ -1,5 +1,4 @@
-from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT
-import json
+from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT, create_hash_from_dictionary
 import traceback
 import hashlib
 
@@ -20,13 +19,13 @@ def create_refresh_token(
     access_token_data: dict,
     salt: str=PASSWORD_SALT,
     refresh_token_ttl: int=86400,
-    request_id: str=None
+    request_id: str=None,
+    logger: Logger=Logger()
 )->dict:
     refresh_token_data = dict()
     if len(access_token_data) > 0:
         now = get_utc_timestamp(with_decimal=False)
-        access_token_data_json = json.dumps(access_token_data)
-        access_token_data_json_hash = hashlib.sha256('{}{}'.format(access_token_data_json, PASSWORD_SALT).encode('utf-8')).hexdigest()
+        access_token_data_json_hash = create_hash_from_dictionary(d=access_token_data, logger=logger, salt=salt)
         refresh_token_data['ath'] = access_token_data_json_hash
         refresh_token_data['exp'] = int(now + refresh_token_ttl)
     return refresh_token_data
