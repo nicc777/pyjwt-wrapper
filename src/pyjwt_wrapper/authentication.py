@@ -77,8 +77,8 @@ def create_final_result_with_tokens(
         logger.debug(message='access_token: {}'.format(result['access_token']), request_id=request_id)
         logger.debug(message='user_token: {}'.format(result['user_token']), request_id=request_id)
         logger.debug(message='refresh_token: {}'.format(result['refresh_token']), request_id=request_id)
-    except:
-        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+    except: # pragma: no cover
+        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id) # pragma: no cover
     return result
 
 
@@ -127,8 +127,8 @@ def authenticate_using_user_credentials(
                     salt=refresh_token_salt,
                     request_id=request_id
                 )
-            except:
-                logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+            except: # pragma: no cover
+                logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id) # pragma: no cover
         if len(authentication_backend_call_result.access_token_extra) > 0:
             access_token_data['extra'] = authentication_backend_call_result.access_token_extra
         if len(authentication_backend_call_result.user_token_extra) > 0:
@@ -145,9 +145,9 @@ def authenticate_using_user_credentials(
             if len(result['access_token']) > 0:
                 logger.info(message='user "{}" authenticated successfully'.format(username), request_id=request_id)
             else:
-                logger.error(message='user"{}" authenticated but access_token was not created. [1]', request_id=request_id)
+                logger.error(message='user"{}" authenticated but access_token was not created. [1]', request_id=request_id) # pragma: no cover
         else:
-            logger.error(message='user"{}" authenticated but access_token was not created. [2]', request_id=request_id)
+            logger.error(message='user"{}" authenticated but access_token was not created. [2]', request_id=request_id) # pragma: no cover
     else:
          logger.error(message='user "{}" authenticated FAILED'.format(username), request_id=request_id)
          result = authentication_service_default_response()
