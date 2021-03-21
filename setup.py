@@ -6,7 +6,7 @@ here = pathlib.Path(__file__).parent.resolve()
 long_description = (here / 'README.md').read_text(encoding='utf-8')
 setup(
     name='pyjwt-wrapper',
-    version='0.5.1',
+    version='0.6.0',
     description='An easy to use wrapper around PyJWT for authentication and authorization.',
     long_description=long_description,
     long_description_content_type='text/markdown',
@@ -19,8 +19,6 @@ setup(
         'Topic :: Software Development :: Libraries',
         'License :: OSI Approved :: MIT License',
         'Programming Language :: Python :: 3',
-        'Programming Language :: Python :: 3.5',
-        'Programming Language :: Python :: 3.6',
         'Programming Language :: Python :: 3.7',
         'Programming Language :: Python :: 3.8',
         'Programming Language :: Python :: 3 :: Only',
@@ -28,7 +26,7 @@ setup(
     keywords='jwt, pyjwt, library',
     package_dir={'': 'src'},
     packages=find_packages(where='src'),
-    python_requires='>=3.5, <4',
+    python_requires='>=3.7, <4',
     install_requires=['pyjwt'],
     extras_require={ 
         'dev': ['check-manifest'],

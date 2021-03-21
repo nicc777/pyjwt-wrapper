@@ -9,6 +9,7 @@ An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/ind
   - [Important Parameters](#important-parameters)
     - [Using the password salt](#using-the-password-salt)
     - [Using the JWT secret](#using-the-jwt-secret)
+  - [Using the Refresh Token](#using-the-refresh-token)
 - [Implementation](#implementation)
   - [Authentication](#authentication)
   - [The JSON Web Token (generated from `pyjwt_wrapper.authentication`)](#the-json-web-token-generated-from-pyjwt_wrapperauthentication)
@@ -188,6 +189,55 @@ Set the following environment variable in your application environment:
 export JWT_SECRET="some really random text and special characters."
 ```
 
+## Using the Refresh Token
+
+If your front-end application gets an authorization error and you have a refresh token, you need to use the refresh token to get another set of access and refresh tokens. 
+
+Only once the refresh token have also reached expiry, must the application re-authenticate the user to get a fresh set of tokens. Form the front-end, this action can be triggered when both an API request and a refresh tokens request returned an error.
+
+The refresh token by default only does the following basic checks in order to decide if the access token can be refreshed:
+
+* Validate the supplied access token checksum is equal to the original calculated checksum
+* Validate that the refresh token has not expired
+
+If you need to do some additional validation, for example checking a back-end to see that the user account is still active, you can implement a function to do tat and pass it to the `refresh_tokens` function as a parameter. Here is an example:
+
+```python
+from pyjwt_wrapper.authentication import refresh_tokens
+import traceback
+
+def my_validation_function(*args)->bool:
+    final_result = False # fail safely
+    application_name = args[9]
+    decoded_access_token = args[1]
+    decoded_refresh_token = args[2]
+    logger = args[3]
+    request_id = args[4]
+    secret_str = args[5]
+    try:
+        # Do your own checks here....
+        pass
+    except:
+        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+    return final_result
+
+
+# Later, call the refresh tokens function.
+#
+# In this example, if the validation function throws an exception, the default 
+# behavior is changed to still force a success
+#
+# The access_token and _refresh_token is supplied by the calling client to your refresh API
+refresh_tokens(
+    application_name='your-great-app',
+    access_token=access_token,
+    refresh_token=refresh_token,
+    request_id=request_id,
+    user_validation_function=my_validation_function,
+    default_user_validation_function_result_on_exception=True
+)
+```
+
 # Implementation
 
 This library can be used in two different contexts:
@@ -314,7 +364,5 @@ coverage report -m
 
 # To Do
 
-* Creation of Refresh Tokens
-* Managing of Refresh Tokens
 * Create a customizable authorization class
 * Create authorization caching feature
