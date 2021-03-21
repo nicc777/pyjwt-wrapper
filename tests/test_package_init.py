@@ -7,6 +7,7 @@ sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import unittest
 from pyjwt_wrapper import *
+from pyjwt_wrapper.authentication import authenticate_using_user_credentials
 from logging import Handler
 
 class ListHandler(Handler):
@@ -59,4 +60,38 @@ class TestCreateHashFromDictionary(unittest.TestCase):
             except:
                 exception_thrown = True
             self.assertTrue(exception_thrown, 'Failed to throw exception on parameter value "{}"'.format(d))
+
+
+class TestDecodeJwtUnsafe(unittest.TestCase):
+
+    def setUp(self):
+        self.log_records = list()
+        self.logger = Logger(logging_handler=ListHandler(records=self.log_records))
+
+    def test_retrieval_of_token_data_01(self):
+        username = 'user001'
+        request_id = 'test_001'
+        result = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id
+        )
+        access_token = result['access_token']
+        access_token_data = decode_jwt(
+            jwt_data=result['access_token'],
+            audience='test1',
+        )
+        access_token_checksum = create_hash_from_dictionary(
+            d=access_token_data,
+            logger=self.logger
+        )
+        unsafe_decoded_data = decode_jwt_unsafe(jwt_data=access_token)
+        unsafe_decoded_data_checksum = create_hash_from_dictionary(
+            d=unsafe_decoded_data,
+            logger=self.logger
+        )
+        self.assertEqual(access_token_checksum, unsafe_decoded_data_checksum)
+    
 

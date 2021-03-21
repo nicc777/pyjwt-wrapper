@@ -184,6 +184,10 @@ def decode_jwt(jwt_data: str, audience: str=None, secret_str: str=JWT_SECRET)->d
     return jwt.decode(jwt_data, secret_str, algorithms="HS256")
 
 
+def decode_jwt_unsafe(jwt_data: str)->dict:
+    return jwt.decode(jwt_data, options={"verify_signature": False})
+
+
 def create_hash_from_dictionary(d: dict, logger: Logger=Logger(), salt: str=PASSWORD_SALT)->str:
     result = None
     if d is None:
