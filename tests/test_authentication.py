@@ -220,6 +220,14 @@ class TestCreatingRefreshToken(unittest.TestCase):
         self.assertTrue(len(result['refresh_token']) > 10)
 
 
+def passing_user_validation_function(*args)->bool:
+    return True
+
+
+def failing_user_validation_function(*args)->bool:
+    return False
+
+
 class TestRefreshTokens(unittest.TestCase):
 
     def setUp(self):
@@ -289,6 +297,121 @@ class TestRefreshTokens(unittest.TestCase):
                 refresh_token_data_2['exp'] - refresh_token_data_1['exp']
             )
         )
+
+    def test_refresh_with_passing_user_validation_function_01(self):
+        username = 'user001'
+        request_id = 'test_003'
+        tokens_1 = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            include_refresh_token=True
+        )
+        access_token_data_1 = decode_jwt(
+            jwt_data=tokens_1['access_token'],
+            audience='test1'
+        )
+        refresh_token_data_1 = decode_jwt(
+            jwt_data=tokens_1['refresh_token']
+        )
+        tokens_2 = refresh_tokens(
+            application_name='test1',
+            access_token=tokens_1['access_token'],
+            refresh_token=tokens_1['refresh_token'],
+            logger=self.logger,
+            request_id='test_004',
+            user_validation_function=passing_user_validation_function
+        )
+        self.assertIsInstance(tokens_2, dict)
+        self.assertTrue('user_token' in tokens_2)
+        self.assertTrue('access_token' in tokens_2)
+        self.assertTrue('refresh_token' in tokens_2)
+        self.assertTrue('request_id' in tokens_2)
+        self.assertIsNone(tokens_2['user_token'])
+        self.assertIsNotNone(tokens_2['access_token'])
+        self.assertIsNotNone(tokens_2['refresh_token'])
+        self.assertIsNotNone(tokens_2['request_id'])
+        self.assertIsInstance(tokens_2['access_token'], str)
+        self.assertIsInstance(tokens_2['request_id'], str)
+        self.assertEqual(tokens_2['request_id'], 'test_004')
+        test_log_message = False
+        for log_message in self.log_records:
+            log_message_str = log_message.getMessage()
+            if 'User validation function result: True' in log_message_str:
+                test_log_message = True
+        self.assertTrue(test_log_message, 'Could not find failure log message')
+
+    def test_refresh_with_failing_user_validation_function_01(self):
+        username = 'user001'
+        request_id = 'test_005'
+        tokens_1 = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            include_refresh_token=True
+        )
+        tokens_2 = refresh_tokens(
+            application_name='test1',
+            access_token=tokens_1['access_token'],
+            refresh_token=tokens_1['refresh_token'],
+            logger=self.logger,
+            request_id='test_006',
+            user_validation_function=failing_user_validation_function
+        )
+        self.assertIsInstance(tokens_2, dict)
+        self.assertTrue('user_token' in tokens_2)
+        self.assertTrue('access_token' in tokens_2)
+        self.assertTrue('refresh_token' in tokens_2)
+        self.assertTrue('request_id' in tokens_2)
+        self.assertIsNone(tokens_2['user_token'])
+        self.assertIsNone(tokens_2['access_token'])
+        self.assertIsNone(tokens_2['refresh_token'])
+        self.assertIsNotNone(tokens_2['request_id'])
+        self.assertIsInstance(tokens_2['request_id'], str)
+        self.assertEqual(tokens_2['request_id'], 'test_006')
+        test_log_message = False
+        for log_message in self.log_records:
+            log_message_str = log_message.getMessage()
+            if 'User validation function result: False' in log_message_str:
+                test_log_message = True
+        self.assertTrue(test_log_message, 'Could not find failure log message')
+
+    def test_refresh_token_expired_01(self):
+        username = 'user001'
+        request_id = 'test_007'
+        tokens_1 = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            include_refresh_token=True,
+            refresh_token_ttl=1
+        )
+        time.sleep(2)
+        tokens_2 = refresh_tokens(
+            application_name='test1',
+            access_token=tokens_1['access_token'],
+            refresh_token=tokens_1['refresh_token'],
+            logger=self.logger,
+            request_id='test_008',
+            user_validation_function=failing_user_validation_function
+        )
+        self.assertIsInstance(tokens_2, dict)
+        self.assertTrue('user_token' in tokens_2)
+        self.assertTrue('access_token' in tokens_2)
+        self.assertTrue('refresh_token' in tokens_2)
+        self.assertTrue('request_id' in tokens_2)
+        self.assertIsNone(tokens_2['user_token'])
+        self.assertIsNone(tokens_2['access_token'])
+        self.assertIsNone(tokens_2['refresh_token'])
+        self.assertIsNotNone(tokens_2['request_id'])
+        self.assertIsInstance(tokens_2['request_id'], str)
+        self.assertEqual(tokens_2['request_id'], 'test_008')
 
 
 if __name__ == '__main__':

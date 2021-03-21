@@ -167,7 +167,9 @@ def refresh_tokens(
     refresh_token_ttl: int=86400,
     logger: Logger=default_logger,
     request_id: str=None,
-    secret_str: str=JWT_SECRET
+    secret_str: str=JWT_SECRET,
+    user_validation_function: object=None,
+    default_user_validation_function_result_on_exception: bool=False
 )->dict:
     result = authentication_service_default_response()
     result['request_id'] = request_id
@@ -180,27 +182,51 @@ def refresh_tokens(
                 logger=logger
             )
             if access_token_checksum == decoded_refresh_token['ath']:
-                access_token_data = create_access_token_data(
-                    application_name=application_name,
-                    username=decoded_access_token_unsafe['sub'],
-                    token_expires_in_seconds=token_expires_in_seconds,
-                    permissions=decoded_access_token_unsafe['prm'],
-                    request_id=request_id
-                )
-                refresh_token_data = create_refresh_token(
-                    access_token_data=access_token_data,
-                    salt=refresh_token_salt,
-                    request_id=request_id
-                )
-                result = create_final_result_with_tokens(
-                    access_token_data=access_token_data,
-                    user_token_data=None,
-                    refresh_token_data=refresh_token_data,
-                    secret_str=secret_str,
-                    logger=logger,
-                    request_id=request_id
-                )
-                logger.info(message='Refresh token used successfully - new tokens issued', request_id=request_id)
+                user_function_passed = True
+                if user_validation_function is not None:
+                    if callable(user_validation_function):
+                        logger.info(message='Using user validation function', request_id=request_id)
+                        user_function_passed = default_user_validation_function_result_on_exception
+                        try:
+                            user_function_passed = user_validation_function(
+                                application_name,
+                                decoded_access_token_unsafe,
+                                decoded_refresh_token,
+                                logger,
+                                request_id,
+                                secret_str
+                            )
+                            logger.info(message='User validation function result: {}'.format(user_function_passed), request_id=request_id)
+                        except: # pragma: no cover
+                            logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id) # pragma: no cover
+                    else:
+                        logger.warning(message='When defining a user validation function, the object must be callable', request_id=request_id)
+                else:
+                    logger.info(message='No user validation function used', request_id=request_id)
+                if user_function_passed:
+                    access_token_data = create_access_token_data(
+                        application_name=application_name,
+                        username=decoded_access_token_unsafe['sub'],
+                        token_expires_in_seconds=token_expires_in_seconds,
+                        permissions=decoded_access_token_unsafe['prm'],
+                        request_id=request_id
+                    )
+                    refresh_token_data = create_refresh_token(
+                        access_token_data=access_token_data,
+                        salt=refresh_token_salt,
+                        request_id=request_id
+                    )
+                    result = create_final_result_with_tokens(
+                        access_token_data=access_token_data,
+                        user_token_data=None,
+                        refresh_token_data=refresh_token_data,
+                        secret_str=secret_str,
+                        logger=logger,
+                        request_id=request_id
+                    )
+                    logger.info(message='Refresh token used successfully - new tokens issued', request_id=request_id)
+                else:
+                    logger.error('user function test did not pass - rejecting refresh request') # pragma: no cover
             else:
                 logger.error('access token checksums do not match - rejecting refresh request') # pragma: no cover
         else:
