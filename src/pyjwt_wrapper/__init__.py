@@ -190,6 +190,8 @@ def create_hash_from_dictionary(d: dict, logger: Logger=Logger(), salt: str=PASS
         raise Exception('Dictionary value cannot be None')
     if not isinstance(d, dict):
         raise Exception('Parameter must be of type dict')
+    if len(d) < 1:
+        raise Exception('Parameter must have at least one value')
     try:
         d_keys = list(d.keys())
         d_keys.sort()
