@@ -9,6 +9,7 @@ An easy to use wrapper around [PyJWT](https://pyjwt.readthedocs.io/en/stable/ind
   - [Important Parameters](#important-parameters)
     - [Using the password salt](#using-the-password-salt)
     - [Using the JWT secret](#using-the-jwt-secret)
+  - [Using the Refresh Token](#using-the-refresh-token)
 - [Implementation](#implementation)
   - [Authentication](#authentication)
   - [The JSON Web Token (generated from `pyjwt_wrapper.authentication`)](#the-json-web-token-generated-from-pyjwt_wrapperauthentication)
@@ -188,6 +189,12 @@ Set the following environment variable in your application environment:
 export JWT_SECRET="some really random text and special characters."
 ```
 
+## Using the Refresh Token
+
+If your front-end application gets an authorization error and you have a refresh token, you need to use the refresh token to get another set of access and refresh tokens. 
+
+Only once the refresh token have also reached expiry, must the application re-authenticate the user to get a fresh set of tokens. Form the front-end, this action can be triggered when both an API request and a refresh tokens request returned an error.
+
 # Implementation
 
 This library can be used in two different contexts:
@@ -314,6 +321,6 @@ coverage report -m
 
 # To Do
 
-* Creation of Refresh Tokens
 * Create a customizable authorization class
 * Create authorization caching feature
+* Allow the user to inject additional logic into the refresh token decision making process
