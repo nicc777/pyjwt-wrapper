@@ -82,9 +82,11 @@ class TestAuthenticationServiceDefaultResponse(unittest.TestCase):
         self.assertIsInstance(result, dict)
         self.assertTrue('user_token' in result)
         self.assertTrue('access_token' in result)
+        self.assertTrue('refresh_token' in result)
         self.assertTrue('request_id' in result)
         self.assertIsNone(result['user_token'])
         self.assertIsNone(result['access_token'])
+        self.assertIsNone(result['refresh_token'])
         self.assertIsNotNone(result['request_id'])
         self.assertIsInstance(result['request_id'], str)
 
@@ -194,6 +196,27 @@ class TestAuthenticationUsingUserCredentials(unittest.TestCase):
         self.assertEqual(user_token_data['extra']['attr4'], 1234)
         
 
+class TestCreatingRefreshToken(unittest.TestCase):
+
+    def setUp(self):
+        self.log_records = list()
+        self.logger = Logger(logging_handler=ListHandler(records=self.log_records))
+
+    def test_basic_refresh_token__01(self):
+        username = 'user001'
+        request_id = 'test_001'
+        result = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            include_refresh_token=True
+        )
+        self.assertTrue('refresh_token' in result)
+        self.assertIsNotNone(result['refresh_token'])
+        self.assertIsInstance(result['refresh_token'], str)
+        self.assertTrue(len(result['refresh_token']) > 10)
 
 
 if __name__ == '__main__':
