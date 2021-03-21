@@ -6,9 +6,10 @@ SCRIPT_DIR = os.path.dirname(os.path.realpath(os.path.join(os.getcwd(), os.path.
 sys.path.append(os.path.normpath(os.path.join(SCRIPT_DIR, PACKAGE_PARENT)))
 
 import unittest
-from pyjwt_wrapper.authentication import authentication_service_default_response, authenticate_using_user_credentials
+from pyjwt_wrapper.authentication import authentication_service_default_response, authenticate_using_user_credentials, refresh_tokens
 from pyjwt_wrapper import Logger, BackEndAuthenticator, AuthenticationResult, decode_jwt
 from logging import Handler
+import time
 
 
 class ListHandler(Handler):
@@ -217,6 +218,77 @@ class TestCreatingRefreshToken(unittest.TestCase):
         self.assertIsNotNone(result['refresh_token'])
         self.assertIsInstance(result['refresh_token'], str)
         self.assertTrue(len(result['refresh_token']) > 10)
+
+
+class TestRefreshTokens(unittest.TestCase):
+
+    def setUp(self):
+        self.log_records = list()
+        self.logger = Logger(logging_handler=ListHandler(records=self.log_records))
+
+    def test_refresh_01(self):
+        username = 'user001'
+        request_id = 'test_001'
+        tokens_1 = authenticate_using_user_credentials(
+            application_name='test1',
+            username=username,
+            password='password',
+            logger=self.logger,
+            request_id=request_id,
+            include_refresh_token=True
+        )
+        access_token_data_1 = decode_jwt(
+            jwt_data=tokens_1['access_token'],
+            audience='test1'
+        )
+        refresh_token_data_1 = decode_jwt(
+            jwt_data=tokens_1['refresh_token']
+        )
+        time.sleep(3.0)
+        tokens_2 = refresh_tokens(
+            application_name='test1',
+            access_token=tokens_1['access_token'],
+            refresh_token=tokens_1['refresh_token'],
+            logger=self.logger,
+            request_id='test_002'
+        )
+        self.assertIsInstance(tokens_2, dict)
+        self.assertTrue('user_token' in tokens_2)
+        self.assertTrue('access_token' in tokens_2)
+        self.assertTrue('refresh_token' in tokens_2)
+        self.assertTrue('request_id' in tokens_2)
+        self.assertIsNone(tokens_2['user_token'])
+        self.assertIsNotNone(tokens_2['access_token'])
+        self.assertIsNotNone(tokens_2['refresh_token'])
+        self.assertIsNotNone(tokens_2['request_id'])
+        self.assertIsInstance(tokens_2['access_token'], str)
+        self.assertIsInstance(tokens_2['request_id'], str)
+        self.assertEqual(tokens_2['request_id'], 'test_002')
+        access_token_data_2 = decode_jwt(
+            jwt_data=tokens_2['access_token'],
+            audience='test1'
+        )
+        refresh_token_data_2 = decode_jwt(
+            jwt_data=tokens_2['refresh_token']
+        )
+        self.assertIsInstance(access_token_data_2, dict)
+        self.assertIsInstance(refresh_token_data_2, dict)
+        self.assertTrue(
+            access_token_data_2['exp'] > (access_token_data_1['exp'] + 2), 
+            'exp_2={} vs exp_1={}   difference expected to be greater or equal than 600. Real difference: {}'.format(
+                access_token_data_2['exp'],
+                access_token_data_1['exp'],
+                access_token_data_2['exp'] - access_token_data_1['exp']
+            )
+        )
+        self.assertTrue(
+            refresh_token_data_2['exp'] > (refresh_token_data_1['exp'] + 2), 
+            'exp_2={} vs exp_1={}   difference expected to be greater or equal than 600. Real difference: {}'.format(
+                refresh_token_data_2['exp'],
+                refresh_token_data_1['exp'],
+                refresh_token_data_2['exp'] - refresh_token_data_1['exp']
+            )
+        )
 
 
 if __name__ == '__main__':

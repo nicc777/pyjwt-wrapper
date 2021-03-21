@@ -1,4 +1,4 @@
-from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT, create_hash_from_dictionary, decode_jwt_unsafe
+from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT, create_hash_from_dictionary, decode_jwt_unsafe, decode_jwt
 import traceback
 import hashlib
 
@@ -34,8 +34,8 @@ def create_refresh_token(
 def create_access_token_data(
     application_name: str,
     username: str,
-    token_expires_in_seconds: int,
     permissions: list,
+    token_expires_in_seconds: int=600,    
     request_id: str=None
 )->str:
     now = get_utc_timestamp(with_decimal=False)
@@ -64,16 +64,19 @@ def create_final_result_with_tokens(
     result['request_id'] = request_id
     try:
         username = None
-        if len(access_token_data) > 0:
-            result['access_token'] = generate_jwt(data=access_token_data, secret_str=secret_str)
-            username = access_token_data['sub']
-            logger.info(message='access token for user "{}" created'.format(username), request_id=request_id)
-        if len(user_token_data) > 0:
-            result['user_token'] = generate_jwt(data=user_token_data, secret_str=secret_str)
-            logger.info(message='user token for user "{}" created'.format(username), request_id=request_id)
-        if len(refresh_token_data) > 0:
-            result['refresh_token'] = generate_jwt(data=refresh_token_data, secret_str=secret_str)
-            logger.info(message='refresh token for user "{}" created'.format(username), request_id=request_id)
+        if access_token_data is not None:
+            if len(access_token_data) > 0:
+                result['access_token'] = generate_jwt(data=access_token_data, secret_str=secret_str)
+                username = access_token_data['sub']
+                logger.info(message='access token for user "{}" created'.format(username), request_id=request_id)
+        if user_token_data is not None:
+            if len(user_token_data) > 0:
+                result['user_token'] = generate_jwt(data=user_token_data, secret_str=secret_str)
+                logger.info(message='user token for user "{}" created'.format(username), request_id=request_id)
+        if refresh_token_data is not None:
+            if len(refresh_token_data) > 0:
+                result['refresh_token'] = generate_jwt(data=refresh_token_data, secret_str=secret_str)
+                logger.info(message='refresh token for user "{}" created'.format(username), request_id=request_id)
         logger.debug(message='access_token: {}'.format(result['access_token']), request_id=request_id)
         logger.debug(message='user_token: {}'.format(result['user_token']), request_id=request_id)
         logger.debug(message='refresh_token: {}'.format(result['refresh_token']), request_id=request_id)
@@ -169,7 +172,7 @@ def refresh_tokens(
     result = authentication_service_default_response()
     result['request_id'] = request_id
     try:
-        decoded_refresh_token = decode_jwt(jwt_data=refresh_token, audience=application_name, secret_str=secret_str)
+        decoded_refresh_token = decode_jwt(jwt_data=refresh_token, secret_str=secret_str)
         if 'ath' in decoded_refresh_token and 'exp' in decoded_refresh_token:
             decoded_access_token_unsafe = decode_jwt_unsafe(jwt_data=access_token)
             access_token_checksum = create_hash_from_dictionary(
@@ -199,9 +202,9 @@ def refresh_tokens(
                 )
                 logger.info(message='Refresh token used successfully - new tokens issued', request_id=request_id)
             else:
-                logger.error('access token checksums do not match - rejecting refresh request')
+                logger.error('access token checksums do not match - rejecting refresh request') # pragma: no cover
         else:
-            logger.error('Unable to use refresh token - rejecting refresh request')
-    except:
-        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+            logger.error('Unable to use refresh token - rejecting refresh request') # pragma: no cover
+    except: # pragma: no cover
+        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id) # pragma: no cover
     return result
