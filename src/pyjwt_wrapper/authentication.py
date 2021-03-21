@@ -1,4 +1,4 @@
-from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT, create_hash_from_dictionary
+from pyjwt_wrapper import Logger, BackEndAuthenticator, generate_jwt, get_utc_timestamp, JWT_SECRET, PASSWORD_SALT, create_hash_from_dictionary, decode_jwt_unsafe
 import traceback
 import hashlib
 
@@ -152,4 +152,56 @@ def authenticate_using_user_credentials(
          logger.error(message='user "{}" authenticated FAILED'.format(username), request_id=request_id)
          result = authentication_service_default_response()
          result['request_id'] = request_id
+    return result
+
+
+def refresh_tokens(
+    application_name: str,
+    access_token: str,
+    refresh_token: str,
+    token_expires_in_seconds: int=600,
+    refresh_token_salt: str=PASSWORD_SALT,
+    refresh_token_ttl: int=86400,
+    logger: Logger=default_logger,
+    request_id: str=None,
+    secret_str: str=JWT_SECRET
+)->dict:
+    result = authentication_service_default_response()
+    result['request_id'] = request_id
+    try:
+        decoded_refresh_token = decode_jwt(jwt_data=refresh_token, audience=application_name, secret_str=secret_str)
+        if 'ath' in decoded_refresh_token and 'exp' in decoded_refresh_token:
+            decoded_access_token_unsafe = decode_jwt_unsafe(jwt_data=access_token)
+            access_token_checksum = create_hash_from_dictionary(
+                d=decoded_access_token_unsafe,
+                logger=logger
+            )
+            if access_token_checksum == decoded_refresh_token['ath']:
+                access_token_data = create_access_token_data(
+                    application_name=application_name,
+                    username=decoded_access_token_unsafe['sub'],
+                    token_expires_in_seconds=token_expires_in_seconds,
+                    permissions=decoded_access_token_unsafe['prm'],
+                    request_id=request_id
+                )
+                refresh_token_data = create_refresh_token(
+                    access_token_data=access_token_data,
+                    salt=refresh_token_salt,
+                    request_id=request_id
+                )
+                result = create_final_result_with_tokens(
+                    access_token_data=access_token_data,
+                    user_token_data=None,
+                    refresh_token_data=refresh_token_data,
+                    secret_str=secret_str,
+                    logger=logger,
+                    request_id=request_id
+                )
+                logger.info(message='Refresh token used successfully - new tokens issued', request_id=request_id)
+            else:
+                logger.error('access token checksums do not match - rejecting refresh request')
+        else:
+            logger.error('Unable to use refresh token - rejecting refresh request')
+    except:
+        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
     return result
