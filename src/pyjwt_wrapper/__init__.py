@@ -183,4 +183,30 @@ def decode_jwt(jwt_data: str, audience: str=None, secret_str: str=JWT_SECRET)->d
         return jwt.decode(jwt_data, secret_str, audience=audience, algorithms="HS256")
     return jwt.decode(jwt_data, secret_str, algorithms="HS256")
 
+
+def create_hash_from_dictionary(d: dict, logger: Logger=Logger(), salt: str=PASSWORD_SALT)->str:
+    result = None
+    if d is None:
+        raise Exception('Dictionary value cannot be None')
+    if not isinstance(d, dict):
+        raise Exception('Parameter must be of type dict')
+    try:
+        d_keys = list(d.keys())
+        d_keys.sort()
+        data = ''
+        for k in d_keys:
+            v = '{}'.format(d[k])
+            data = '{}|{}={}'.format(data, k, v)
+        result = hashlib.sha256('{}{}'.format(data, salt).encode('utf-8')).hexdigest()
+    except:
+        logger.error(message='EXCEPTION: {}'.format(traceback.format_exc()), request_id=request_id)
+    if result is None:
+        raise Exception('Failed to create hash - result was None')
+    if not isinstance(result, str):
+        raise Exception('Failed to create hash - result was not a string')
+    if len(result) < 10:
+        raise Exception('Failed to create hash - resulting string is not long enough')
+    return result
+
+
 # EOF
