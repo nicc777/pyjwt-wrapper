@@ -28,8 +28,6 @@ PyJWT is a really solid library and a very useful tool for creating and using JS
 
 This library is a wrapper around PyJWT that creates a standard `access token` and `user token`.
 
-**_Note_**: Refresh tokens to come soon...
-
 # Quick Start
 
 ## Installation 
